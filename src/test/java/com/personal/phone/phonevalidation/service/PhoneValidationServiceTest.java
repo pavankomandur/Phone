@@ -3,7 +3,7 @@ package com.personal.phone.phonevalidation.service;
 import com.personal.phone.phonevalidation.model.PhoneNumber;
 import com.personal.phone.phonevalidation.utils.KeyPad;
 import org.junit.Assert;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -32,7 +32,7 @@ public class PhoneValidationServiceTest {
         phoneNumbers.add("2245679879");
         phoneNumbers.add("2245679880");
         List<String> mockResponse=mockPhoneValidationService.getList(phoneNumbers, KeyPad.getKeyPad());
-        Assert.assertEquals(mockResponse.size(),15);
+        Assert.assertEquals(mockResponse.size(),163);
     }
 
     @Test
@@ -45,7 +45,7 @@ public class PhoneValidationServiceTest {
         phoneNumbers.add("2245679874");
         phoneNumbers.add("2245679882");
         List<String> mockResponse=mockPhoneValidationService.getList(phoneNumbers, KeyPad.getKeyPad());
-        Assert.assertEquals(mockResponse.size(),18);
+        Assert.assertEquals(mockResponse.size(),165);
     }
     @Test
     public void getListTestWithExceptionScenarioTest()
@@ -62,7 +62,7 @@ public class PhoneValidationServiceTest {
     public void getSuggestionsTestWith10digitTest()
     {
         PhoneNumber mockResponse=mockPhoneValidationService.getSuggestions("6023140288",1);
-        Assert.assertEquals(mockResponse.getCombinations().size(),3);
+        Assert.assertEquals(mockResponse.getCombinations().size(),5);
     }
 
     @Test
@@ -76,7 +76,7 @@ public class PhoneValidationServiceTest {
     public void attachAreaCodesTest()
     {
         List<String> mockResponse=mockPhoneValidationService.attachAreaCodes("3140288");
-        Assert.assertEquals(mockResponse.size(),8);
+        Assert.assertEquals(mockResponse.size(),24);
     }
 
     @Test
@@ -97,6 +97,13 @@ public class PhoneValidationServiceTest {
         phoneNumbers.add("2245679882");
         List<String> mockResponse=mockPhoneValidationService.getPerPageDetails(phoneNumbers,1);
         Assert.assertEquals(mockResponse.size(),5);
+    }
+
+    @Test
+    public void replaceRemainingDigitsTest()
+    {
+        String ph=mockPhoneValidationService.replaceRemainingDigits("8023140288",KeyPad.getKeyPad());
+        Assert.assertEquals(ph,"T0AD1G0ATT");
     }
 
 }

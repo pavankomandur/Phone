@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Service
 public class PhoneValidationService {
@@ -29,27 +31,43 @@ public class PhoneValidationService {
     @Autowired
     private PhoneNumber phoneNumberResponse;
 
+
     public List<String> getList(List<String> phoneNumbers,Map<String,String> keyPad)
     {
 
         List<String> suggestions = new ArrayList<String>();
+
         try {
             for (String phoneNo : phoneNumbers) {
+                log.info("Phone Number " + phoneNo);
                 if (phoneNo.length()<10) {
                     log.error("Invalid Length of Phone Number ");
                     return null;
                 }
+                int position = 0;
                 String last_digit = phoneNo.substring(phoneNo.length() - 1);
-                //System.out.println("last digit is " + last_digit);
-                if (keyPad.containsKey(last_digit)) {
-                    //System.out.println("Character is " + keyPad.get(last_digit));
-                    String[] possibilities = keyPad.get(last_digit).split("");
-                    for (String ch : possibilities) {
-                        suggestions.add(phoneNo.substring(0, phoneNo.length() - 1) + ch);
+                String[] phonedigits=phoneNo.split("");
+                for (String digit : phonedigits) {
+                    // Arrays.stream(phonedigits).map(x->{
+                    if (keyPad.containsKey(digit))
+                    {
+                        String newPhoneNo="";
+                        //Converting each digit to character with all combinations as per key pad
+                        String[] possibilities = keyPad.get(digit).split("");
+                        for (String ch : possibilities) {
+                            log.info("digit going to replace is " + digit + " with " + ch);
+
+                            newPhoneNo = phoneNo.substring(0, position)
+                                    + ch
+                                    + phoneNo.substring(position + 1);
+                            log.info("converting each digit " + newPhoneNo);
+                            // finally replacing the remaining digits with characters.
+                            suggestions.add(replaceRemainingDigits(newPhoneNo,KeyPad.getKeyPad()));
+                        }
+
                     }
-                } else {
-                    suggestions.add(phoneNo);
-                }
+                    position++;
+                };
 
             }
         }
@@ -58,9 +76,25 @@ public class PhoneValidationService {
             log.error("Exception Occurred " + ex.getMessage());
             ex.printStackTrace(); // to be removed when moved to production
         }
-        System.out.println("Final Phone Number is " + suggestions.toString());
+        log.info("Final Phone Number is " + suggestions.toString());
         return suggestions;
     }
+
+    public  String replaceRemainingDigits(String phNumber,Map<String,String> keyPad)
+    {
+        int index=0;
+        for(String pd : phNumber.split("")) {
+            if (keyPad.containsKey(pd)) {
+                phNumber = phNumber.substring(0, index)
+                        + keyPad.get(pd).split("")[0]
+                        + phNumber.substring(index + 1);
+            }
+            index++;
+        }
+        log.info("After converting remaining digits " + phNumber);
+        return phNumber;
+    }
+
 
     public PhoneNumber getSuggestions(String phNumber, int pageNo)
     {
@@ -68,13 +102,13 @@ public class PhoneValidationService {
             List<String> totalPhoneNumbers = new ArrayList<String>();
             if (phNumber!=null && phNumber.length() > 7) {
                 totalPhoneNumbers = getList(Arrays.asList(phNumber), KeyPad.getKeyPad());
-                phoneNumberResponse.setCombinations(getPerPageDetails(totalPhoneNumbers, pageNo));
             } else if (phNumber!=null && phNumber.length() <=7) {
                 //if the phone number is 7 digits, then attaching all possible area codes to that as suggestions
                 List<String> fullPhoneNumbers = attachAreaCodes(phNumber);
                 totalPhoneNumbers = getList(fullPhoneNumbers, KeyPad.getKeyPad());
 
             }
+            totalPhoneNumbers=totalPhoneNumbers.stream().distinct().collect(Collectors.toList());
             phoneNumberResponse.setCombinations(getPerPageDetails(totalPhoneNumbers, pageNo));
             phoneNumberResponse.setPageNo(pageNo);
             int totalPages = (totalPhoneNumbers.size() / Integer.parseInt(pageSize)) + 1;
